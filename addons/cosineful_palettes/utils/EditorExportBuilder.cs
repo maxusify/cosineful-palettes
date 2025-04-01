@@ -1,4 +1,3 @@
-#if GODOT4_4_OR_GREATER
 #nullable enable
 
 namespace CosinefulPalettes.Utils
@@ -123,5 +122,3 @@ namespace CosinefulPalettes.Utils
         }
     }
 }
-
-#endif

@@ -1,5 +1,3 @@
-#if GODOT4_4_OR_GREATER
-
 namespace CosinefulPalettes
 {
     using System;
@@ -367,4 +365,3 @@ namespace CosinefulPalettes
         #endregion Private Methods
     }
 }
-#endif
