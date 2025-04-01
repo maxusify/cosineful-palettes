@@ -1,4 +1,4 @@
-#if TOOLS && GODOT4_4_OR_GREATER
+#if GODOT4_4_OR_GREATER
 
 namespace CosinefulPalettes
 {

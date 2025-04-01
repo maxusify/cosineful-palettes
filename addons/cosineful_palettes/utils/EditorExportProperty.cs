@@ -1,13 +1,15 @@
-#if TOOLS && GODOT4_4_OR_GREATER
-
-using System;
-using System.Text;
-using Godot;
-using GDC = Godot.Collections;
-
+#if GODOT4_4_OR_GREATER
 #nullable enable
+
 namespace CosinefulPalettes.Utils
 {
+    using System;
+    using System.Text;
+
+    using Godot;
+
+    using GDC = Godot.Collections;
+
     /// <summary>
     /// Interface for exported properties for the Godot editor.
     /// </summary>
@@ -176,8 +178,7 @@ namespace CosinefulPalettes.Utils
                 return data;
             }
 
-            _propertyData = new GDC.Dictionary
-            {
+            _propertyData = new GDC.Dictionary {
                 ["name"] = Name,
                 ["type"] = (int)Type,
                 ["hint"] = (int)_hint,

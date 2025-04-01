@@ -1,14 +1,15 @@
-#if TOOLS && GODOT4_4_OR_GREATER
-
-using System;
-using System.Collections.Generic;
-using Godot;
-
-using GDC = Godot.Collections;
-
+#if GODOT4_4_OR_GREATER
 #nullable enable
+
 namespace CosinefulPalettes.Utils
 {
+    using System;
+    using System.Collections.Generic;
+
+    using Godot;
+
+    using GDC = Godot.Collections;
+
     public partial class EditorExportBuilder : RefCounted
     {
         #region Static Properties
@@ -71,14 +72,13 @@ namespace CosinefulPalettes.Utils
                 throw new ArgumentException($"Property with name '{name}' already exists.", nameof(name));
             }
 
-            Type type = typeof(TVariant);
+            var type = typeof(TVariant);
 
-            Variant.Type variantType = type.IsAssignableTo(typeof(GodotObject))
+            var variantType = type.IsAssignableTo(typeof(GodotObject))
                 ? Variant.Type.Object
                 : GetVariantType<TVariant>();
 
-            EditorExportProperty<TVariant> property = new()
-            {
+            EditorExportProperty<TVariant> property = new() {
                 Name = name,
                 Type = variantType
             };
@@ -92,9 +92,9 @@ namespace CosinefulPalettes.Utils
         {
             _properties = [];
 
-            foreach ((string _, IEditorExportProperty prop) in _registered)
+            foreach ((var _, var prop) in _registered)
             {
-                GDC.Dictionary propData = prop.BuildPropertyData();
+                var propData = prop.BuildPropertyData();
 
                 if (propData.Count == 0)
                 {
@@ -107,23 +107,17 @@ namespace CosinefulPalettes.Utils
             return _properties;
         }
 
-        public Variant HandleGetter(string name)
-        {
-            return !_registered.TryGetValue(name, out IEditorExportProperty? property) ? default : property.GetValue();
-        }
+        public Variant HandleGetter(string name) => !_registered.TryGetValue(name, out var property) ? default : property.GetValue();
 
-        public bool HandleSetter(string name, Variant value)
-        {
-            return _registered.TryGetValue(name, out IEditorExportProperty? property) && property.SetValue(value);
-        }
+        public bool HandleSetter(string name, Variant value) => _registered.TryGetValue(name, out var property) && property.SetValue(value);
 
         #endregion Public Methods
 
         private static Variant.Type GetVariantType<[MustBeVariant] TVariant>()
         {
-            Type type = typeof(TVariant);
+            var type = typeof(TVariant);
 
-            return TypeToVariantMap.TryGetValue(type, out Variant.Type variantType)
+            return TypeToVariantMap.TryGetValue(type, out var variantType)
                 ? variantType
                 : throw new InvalidOperationException($"Unsupported `Variant` type: {type}");
         }
