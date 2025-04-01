@@ -30,9 +30,10 @@ After that you can install the addon by running:
 
 ```sh
 godotenv addons install
+dotnet build
 ```
 
-Make sure you have enabled addons in your Godot project settings!
+Make sure you have **BUILT** the project and **ENABLED** addon in your Godot project settings!
 
 <p align="center">
     <img 
