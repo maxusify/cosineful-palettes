@@ -6,7 +6,10 @@ namespace CosinefulPalettes.Editor
 
     public partial class CosinefulPalettePreviewPlugin : EditorInspectorPlugin
     {
-        public override bool _CanHandle(GodotObject @object) => @object is CosinefulPalette;
+        public override bool _CanHandle(GodotObject @object)
+        {
+            return @object is CosinefulPalette;
+        }
 
         public override void _ParseBegin(GodotObject @object)
         {

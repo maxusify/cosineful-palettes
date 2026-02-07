@@ -16,52 +16,53 @@ namespace CosinefulPalettes
     /// </summary>
     public interface ICosinefulPalette
     {
+        /// <summary>
+        /// Emitted when a new color palette is generated.
+        /// </summary>
         event CosinefulPalette.PaletteGeneratedEventHandler PaletteGenerated;
 
         /// <summary>
         /// Color palette brightness.
         /// </summary>
         Vector3 Brightness { get; set; }
-
         /// <summary>
         /// Color palette contrast.
         /// </summary>
         Vector3 Contrast { get; set; }
-
         /// <summary>
         /// Color palette frequency of changing colors.
         /// </summary>
         Vector3 Frequency { get; set; }
-
         /// <summary>
         /// Color palette range of picking colors.
         /// </summary>
         Vector3 Range { get; set; }
+        /// <summary>
+        /// Current seed for randomization.
+        /// </summary>
+        int Seed { get; }
 
         /// <summary>
         /// Randomizes the color palette.
         /// </summary>
-        void Randomize();
-
+        /// <param name="seed">Seed for randomization.</param>
+        void Randomize(int seed = -1);
         /// <summary>
         /// Returns color palette as <see cref="Gradient"/>.
         /// </summary>
         /// <returns><see cref="Gradient"/>.</returns>
         Gradient GetColorsGradient();
-
         /// <summary>
         /// Returns color palette as array of colors.
         /// </summary>
         /// <returns>Array of colors.</returns>
         Color[] GetColorsArray();
-
         /// <summary>
         /// Returns color sample of the palette at given offset in range [0, 1].
         /// </summary>
         /// <param name="offset">Offset in range [0, 1].</param>
         /// <returns>Color found at given offset.</returns>
         Color GetColor(float offset);
-
         /// <summary>
         /// Returns color at given index. Index value is clamped from 0
         /// to gradient colors length.
@@ -93,7 +94,7 @@ namespace CosinefulPalettes
             get => _colorPaletteColorCount;
             set {
                 _colorPaletteColorCount = value;
-                GenerateForEditor();
+                _GenerateForEditor();
                 NotifyPropertyListChanged();
             }
         }
@@ -109,9 +110,9 @@ namespace CosinefulPalettes
 
         public Vector3 Contrast
         {
-            get => _constrast;
+            get => _contrast;
             set {
-                _constrast = value;
+                _contrast = value;
                 NotifyPropertyListChanged();
             }
         }
@@ -134,12 +135,19 @@ namespace CosinefulPalettes
             }
         }
 
+        public int Seed { get; private set; }
+
         private Gradient _colorPalette = new();
         private int _colorPaletteColorCount = 100;
         private Vector3 _brightness = new(0.5f, 0.5f, 0.5f);
-        private Vector3 _constrast = new(0.5f, 0.5f, 0.5f);
+        private Vector3 _contrast = new(0.5f, 0.5f, 0.5f);
         private Vector3 _frequency = new(1.0f, 1.0f, 1.0f);
         private Vector3 _range = new(0.0f, 0.33f, 0.67f);
+
+        private int _lastSeed = -1;
+
+        private readonly Stack<int> _prevSeeds = [];
+        private readonly Stack<int> _nextSeeds = [];
 
         private readonly EditorExportBuilder _export;
 
@@ -154,68 +162,95 @@ namespace CosinefulPalettes
             _ = _export
                 .CreateProperty<Gradient>("Palette Preview")
                 .OnGet(() => OutputGradient)
-                .OnSet((value) => {
+                .OnSet(value => {
                     OutputGradient = value;
-                    GenerateForEditor();
+                    _GenerateForEditor();
                 })
                 .ReadOnly();
 
             _ = _export
                 .CreateProperty<int>("Color Count")
                 .OnGet(() => _colorPaletteColorCount)
-                .OnSet((value) => {
+                .OnSet(value => {
                     _colorPaletteColorCount = value;
-                    GenerateForEditor();
+                    _GenerateForEditor();
                 })
                 .ReadOnly();
+
+            // Seed
+            _ = _export
+                .CreateProperty<int>("Seed")
+                .OnGet(() => Seed)
+                .OnSet(value =>
+                {
+                    _nextSeeds.Clear();
+
+                    if (Seed != -1)
+                    {
+                        _prevSeeds.Push(Seed);
+                    }
+
+                    Seed = value;
+                });
 
             // Buttons
 
             _ = _export
                 .CreateProperty<Callable>("Refresh Palette")
-                .OnGet(() => Callable.From(GenerateForEditor))
+                .OnGet(() => Callable.From(_GenerateForEditor))
                 .ToolButton("Refresh Palette", "Color");
 
-            // Brightness
+            // Components
+            const float min = 0f;
+            const float max = 1f;
+            const float step = 0.001f;
+            const bool orGreater = true;
+            const bool orLess = true;
 
             _ = _export
                 .CreateProperty<Vector3>("Components/Brightness")
                 .OnGet(() => _brightness)
-                .OnSet((value) => _brightness = value)
-                .Range(0f, 1f, 0.001f);
-
-            // Contrast
+                .OnSet(value => _brightness = value)
+                .Range(min, max, step, orGreater: orGreater, orLess: orLess);
 
             _ = _export
                 .CreateProperty<Vector3>("Components/Contrast")
-                .OnGet(() => _constrast)
-                .OnSet((value) => _constrast = value)
-                .Range(0f, 1f, 0.001f);
-
-            // Frequency
+                .OnGet(() => _contrast)
+                .OnSet(value => _contrast = value)
+                .Range(min, max, step, orGreater: orGreater, orLess: orLess);
 
             _ = _export
                 .CreateProperty<Vector3>("Components/Frequency")
                 .OnGet(() => _frequency)
-                .OnSet((value) => _frequency = value)
-                .Range(0f, 1f, 0.001f);
-
-            // Range
+                .OnSet(value => _frequency = value)
+                .Range(min, max, step, orGreater: orGreater, orLess: orLess);
 
             _ = _export
                 .CreateProperty<Vector3>("Components/Range")
                 .OnGet(() => _range)
-                .OnSet((value) => _range = value)
-                .Range(0f, 1f, 0.001f);
+                .OnSet(value => _range = value)
+                .Range(min, max, step, orGreater: orGreater, orLess: orLess);
 
             // Randomize
 
             _ = _export
                 .CreateProperty<Callable>("Components/Randomize")
-                .OnGet(() => Callable.From(Randomize))
+                .OnGet(() => Callable.From(_ButtonRandomize))
                 .ToolButton("Randomize", "RandomNumberGenerator");
 
-            GenerateForEditor();
+            _ = _export
+                .CreateProperty<Callable>("Components/Previous")
+                .When(() => _prevSeeds.Count > 0)
+                .OnGet(() => Callable.From(_ButtonPreviousSeed))
+                .ToolButton("Previous Seed", "GuiTreeArrowLeft");
+
+            _ = _export
+                .CreateProperty<Callable>("Components/Next")
+                .When(() => _nextSeeds.Count > 0)
+                .OnGet(() => Callable.From(_ButtonNextSeed))
+                .ToolButton("Next Seed", "GuiTreeArrowRight");
+
+            _GenerateForEditor();
         }
 
         /// <summary>
@@ -240,50 +275,73 @@ namespace CosinefulPalettes
             };
         }
 
+        /// <summary>
+        /// Creates new color palette based on the cosine formula with random values.
+        /// </summary>
+        /// <returns>Color palette.</returns>
+        public static CosinefulPalette Create()
+        {
+            var palette = new CosinefulPalette();
+            palette.Randomize();
+
+            return palette;
+        }
+
         #endregion Constructor
         #region Export Logic
 
         public override GDC.Array<GDC.Dictionary> _GetPropertyList()
-            => _export.GetProperties();
+        {
+            return _export.GetProperties();
+        }
 
         public override Variant _Get(StringName property)
-            => _export.HandleGetter(property);
+        {
+            return _export.HandleGetter(property);
+        }
 
         public override bool _Set(StringName property, Variant value)
-            => _export.HandleSetter(property, value);
+        {
+            return _export.HandleSetter(property, value);
+        }
 
         #endregion Export Logic
         #region Public Methods
 
-        public void Randomize()
+        public void Randomize(int seed = -1)
         {
-            Brightness = GetRandomizedVector();
-            Contrast = GetRandomizedVector();
-            Frequency = GetRandomizedVector();
-            Range = GetRandomizedVector();
+            if (Engine.IsEditorHint())
+            {
+                _nextSeeds.Clear();
 
-            Vector3 GetRandomizedVector() => new(
-                Random.Shared.NextSingle(),
-                Random.Shared.NextSingle(),
-                Random.Shared.NextSingle()
-            );
+                if (Seed != -1)
+                {
+                    _prevSeeds.Push(Seed);
+                }
+            }
 
-            GenerateForEditor();
+            Seed = seed;
+            _RandomizeInternal();
         }
 
         public Gradient GetColorsGradient()
         {
-            Generate();
+            _Generate();
+
             return OutputGradient;
         }
 
         public Color[] GetColorsArray()
         {
-            Generate();
+            _Generate();
+
             return OutputGradient.Colors;
         }
 
-        public Color GetColor(float offset) => GetColorsGradient().Sample(offset);
+        public Color GetColor(float offset)
+        {
+            return GetColorsGradient().Sample(offset);
+        }
 
         public Color GetColor(int index)
         {
@@ -295,34 +353,114 @@ namespace CosinefulPalettes
         #endregion Public Methods
         #region Private Methods
 
-        private void GenerateForEditor()
+        private void _ButtonPreviousSeed()
+        {
+            if (_prevSeeds.Count == 0)
+            {
+                return;
+            }
+
+            if (Seed != -1)
+            {
+                _nextSeeds.Push(Seed);
+            }
+
+            Seed = _prevSeeds.Pop();
+
+            _RandomizeInternal();
+            _GenerateForEditor();
+            NotifyPropertyListChanged();
+        }
+
+        private void _ButtonNextSeed()
+        {
+            if (_nextSeeds.Count == 0)
+            {
+                return;
+            }
+
+            if (Seed != -1)
+            {
+                _prevSeeds.Push(Seed);
+            }
+
+            Seed = _nextSeeds.Pop();
+
+            _RandomizeInternal();
+            _GenerateForEditor();
+            NotifyPropertyListChanged();
+        }
+
+        private void _ButtonRandomize()
+        {
+            if (Seed != -1)
+            {
+                _prevSeeds.Push(Seed);
+            }
+
+            _nextSeeds.Clear();
+
+            Seed = Random.Shared.Next();
+
+            _RandomizeInternal();
+            _GenerateForEditor();
+            NotifyPropertyListChanged();
+        }
+
+        private void _RandomizeInternal()
+        {
+            if (Seed == _lastSeed)
+            {
+                return;
+            }
+
+            _lastSeed = Seed;
+
+            var random = new Random(Seed);
+
+            Brightness = getRandomizedVector();
+            Contrast = getRandomizedVector();
+            Frequency = getRandomizedVector();
+            Range = getRandomizedVector();
+
+            return;
+
+            Vector3 getRandomizedVector()
+            {
+                return new Vector3(random.NextSingle(), random.NextSingle(), random.NextSingle());
+            }
+        }
+
+        private void _GenerateForEditor()
         {
             if (!Engine.IsEditorHint())
             {
                 return;
             }
 
-            Generate();
+            _Generate();
         }
 
-        private void Generate()
+        private void _Generate()
         {
-            List<float> offsets = [];
+            var offsets = new List<float>(OutputGradientColorCount);
 
             for (var i = 0; i < OutputGradientColorCount; i++)
             {
                 offsets.Add((float)i / (OutputGradientColorCount - 1));
             }
 
-            OutputGradient = new Gradient() {
-                Colors = CosineFormulaGeneratePalette(),
+            _RandomizeInternal();
+
+            OutputGradient = new Gradient {
+                Colors = _Generate_CosineFormula(),
                 Offsets = [.. offsets]
             };
 
             EmitSignal(SignalName.PaletteGenerated);
         }
 
-        private Color[] CosineFormulaGeneratePalette()
+        private Color[] _Generate_CosineFormula()
         {
             var colorCount = OutputGradientColorCount;
             var brightness = Brightness;
@@ -330,36 +468,36 @@ namespace CosinefulPalettes
             var freq = Frequency;
             var range = Range;
 
-            switch (colorCount)
+            if (colorCount <= 0)
             {
-                // If color count is zero or less, return empty array
-                case <= 0:
-                    return [];
+                return [];
+            }
 
-                // If color count is one, return a single color
-                case 1:
-                    return [new Color(
-                            brightness.X + (contrast.X * Cos(Tau * (freq.X + range.X))),
-                            brightness.Y + (contrast.Y * Cos(Tau * (freq.Y + range.Y))),
-                            brightness.Z + (contrast.Z * Cos(Tau * (freq.Z + range.Z)))
-                        )];
-                default:
-                    break;
+            if (colorCount == 1)
+            {
+                return [genColor(1, 1)];
             }
 
             var colors = new Color[colorCount];
-            var n = Max((float)colorCount - 1, 1f);
 
             for (var i = 0; i < colorCount; i++)
             {
-                colors[i] = new Color(
-                    brightness.X + (contrast.X * Cos(Tau * ((freq.X * (i / n)) + range.X))),
-                    brightness.Y + (contrast.Y * Cos(Tau * ((freq.Y * (i / n)) + range.Y))),
-                    brightness.Z + (contrast.Z * Cos(Tau * ((freq.Z * (i / n)) + range.Z)))
-                );
+                colors[i] = genColor(i, colorCount - 1);
             }
 
             return colors;
+
+            Color genColor(int index, int maxIndex)
+            {
+                float idx = Max(index, 1);
+                float nc = Max(maxIndex, 1);
+
+                return new Color(
+                    brightness.X + (contrast.X * Cos(Tau * ((freq.X * (idx / nc)) + range.X))),
+                    brightness.Y + (contrast.Y * Cos(Tau * ((freq.Y * (idx / nc)) + range.Y))),
+                    brightness.Z + (contrast.Z * Cos(Tau * ((freq.Z * (idx / nc)) + range.Z)))
+                );
+            }
         }
 
         #endregion Private Methods
