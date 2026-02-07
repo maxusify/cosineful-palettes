@@ -4,7 +4,7 @@
 
 
 <p align="center">
-    <img src="icon.svg" alt="Cosineful Palette" width="150" />
+    <img src="icon.svg" alt="Cosineful Palette" width="250" />
 </p>
 
 Addon for Godot Engine 4.4+ (Mono/.NET enabled) that allows you to create beautiful palettes with a simple and intuitive custom resource. Color generation is based on the cosine formula greatly inspired by [Inigo Quilez article](https://iquilezles.org/articles/palettes/).
@@ -53,7 +53,7 @@ You can create `CosinefulPalette` resource through editor inspector:
     />
 </p>
 
-If you want to create `CosinefulPalette` resource programmatically, you can use the `CosinefulPalette.Create` method:
+If you want to create `CosinefulPalette` resource programmatically, you can use the `Create` method:
 
 
 ```csharp
@@ -65,11 +65,10 @@ CosinefulPalette palette = CosinefulPalette.Create(
 );
 ```
 
-If random outcome is desired, simply use empty constructor and call `Randomize` method:
+If random outcome is desired, simply use empty `Create` method:
 
 ```csharp
-CosinefulPalette palette = new CosinefulPalette();
-palette.Randomize();
+CosinefulPalette palette = CosinefulPalette.Create();
 ```
  
 You can also query the palette as follows:
@@ -81,7 +80,7 @@ using Godot;
 
 public partial class MyNode : Node
 {
-    [Export] public CosinefulPalette Palette { get; set; } = default!;
+    [Export] public CosinefulPalette Palette { get; set; } = null!;
 
     public override void _Ready()
     {
@@ -100,7 +99,7 @@ public partial class MyNode : Node
         Gradient gradient = Palette.GetColorsGradient();
 
         // We can randomize the palette and get new colors.
-        Palette.Randomize();
+        Palette.Randomize(1337);
 
         // .. or we can set the component values ourselves.
         Palette.Brightness = new Vector3(0.25f, 0.25f, 0.25f);
