@@ -4,7 +4,7 @@ using Godot;
 
 public partial class MyNode : Node
 {
-    [Export] public CosinefulPalette Palette { get; set; } = default!;
+    [Export] public CosinefulPalette Palette { get; set; } = null!;
 
     public override void _Ready()
     {
@@ -23,7 +23,7 @@ public partial class MyNode : Node
         var gradient = Palette.GetColorsGradient();
 
         // We can randomize the palette and get new colors.
-        Palette.Randomize();
+        Palette.Randomize(1337);
 
         // .. or we can set the component values ourselves.
         Palette.Brightness = new Vector3(0.25f, 0.25f, 0.25f);
