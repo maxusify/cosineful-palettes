@@ -11,10 +11,20 @@ namespace CosinefulPalettes.Editor
         private const string PLUGIN_NAME_INSPECTOR = "inspector";
 
         public override void _EnablePlugin()
-            => EditorInterface.Singleton.SetPluginEnabled($"{PLUGIN_NAME}/{PLUGIN_NAME_INSPECTOR}", true);
+        {
+            EditorInterface.Singleton.SetPluginEnabled(
+                $"{PLUGIN_NAME}/{PLUGIN_NAME_INSPECTOR}",
+                true
+            );
+        }
 
         public override void _DisablePlugin()
-            => EditorInterface.Singleton.SetPluginEnabled($"{PLUGIN_NAME}/{PLUGIN_NAME_INSPECTOR}", false);
+        {
+            EditorInterface.Singleton.SetPluginEnabled(
+                $"{PLUGIN_NAME}/{PLUGIN_NAME_INSPECTOR}",
+                false
+            );
+        }
     }
 }
 

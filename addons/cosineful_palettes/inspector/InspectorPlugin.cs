@@ -7,7 +7,7 @@ namespace CosinefulPalettes.Editor
     [Tool]
     public partial class InspectorPlugin : EditorPlugin
     {
-        private CosinefulPalettePreviewPlugin _previewPlugin;
+        private CosinefulPalettePreviewPlugin _previewPlugin = null!;
 
         public override void _EnterTree()
         {
@@ -16,7 +16,10 @@ namespace CosinefulPalettes.Editor
             AddInspectorPlugin(_previewPlugin);
         }
 
-        public override void _ExitTree() => RemoveInspectorPlugin(_previewPlugin);
+        public override void _ExitTree()
+        {
+            RemoveInspectorPlugin(_previewPlugin);
+        }
     }
 }
 
