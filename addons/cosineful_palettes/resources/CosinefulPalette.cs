@@ -41,6 +41,11 @@ namespace CosinefulPalettes
         /// Current seed for randomization.
         /// </summary>
         int Seed { get; }
+        /// <summary>
+        /// Determines if the generation is seed based or not. If components are set manually, this should
+        /// be set to <c>false</c>.
+        /// </summary>
+        bool UseSeed { get; }
 
         /// <summary>
         /// Randomizes the color palette.
@@ -104,6 +109,7 @@ namespace CosinefulPalettes
             get => _brightness;
             set {
                 _brightness = value;
+                UseSeed = false;
                 NotifyPropertyListChanged();
             }
         }
@@ -113,6 +119,7 @@ namespace CosinefulPalettes
             get => _contrast;
             set {
                 _contrast = value;
+                UseSeed = false;
                 NotifyPropertyListChanged();
             }
         }
@@ -122,6 +129,7 @@ namespace CosinefulPalettes
             get => _frequency;
             set {
                 _frequency = value;
+                UseSeed = false;
                 NotifyPropertyListChanged();
             }
         }
@@ -131,14 +139,39 @@ namespace CosinefulPalettes
             get => _range;
             set {
                 _range = value;
+                UseSeed = false;
                 NotifyPropertyListChanged();
             }
         }
 
-        public int Seed { get; private set; }
+        public int Seed
+        {
+            get => _seed;
+            private set
+            {
+                _seed = value;
+                UseSeed = true;
+                NotifyPropertyListChanged();
+            }
+        }
+
+        public bool UseSeed
+        {
+            get => _useSeed;
+            private set
+            {
+                _useSeed = value;
+                NotifyPropertyListChanged();
+            }
+        }
 
         private Gradient _colorPalette = new();
+
         private int _colorPaletteColorCount = 100;
+
+        private int _seed = Random.Shared.Next();
+        private bool _useSeed = true;
+
         private Vector3 _brightness = new(0.5f, 0.5f, 0.5f);
         private Vector3 _contrast = new(0.5f, 0.5f, 0.5f);
         private Vector3 _frequency = new(1.0f, 1.0f, 1.0f);
@@ -158,47 +191,45 @@ namespace CosinefulPalettes
             _export = new EditorExportBuilder();
 
             // Produced output
+            _ = _export
+                    .CreateProperty<Gradient>("Palette Preview")
+                    .OnGet(() => OutputGradient)
+                    .OnSet(value => OutputGradient = value)
+                    .ReadOnly();
 
             _ = _export
-                .CreateProperty<Gradient>("Palette Preview")
-                .OnGet(() => OutputGradient)
-                .OnSet(value => {
-                    OutputGradient = value;
-                    _GenerateForEditor();
-                })
-                .ReadOnly();
-
-            _ = _export
-                .CreateProperty<int>("Color Count")
-                .OnGet(() => _colorPaletteColorCount)
-                .OnSet(value => {
-                    _colorPaletteColorCount = value;
-                    _GenerateForEditor();
-                })
-                .ReadOnly();
+                    .CreateProperty<int>("Color Count")
+                    .OnGet(() => OutputGradientColorCount)
+                    .OnSet(value => OutputGradientColorCount = value)
+                    .ReadOnly();
 
             // Seed
             _ = _export
-                .CreateProperty<int>("Seed")
-                .OnGet(() => Seed)
-                .OnSet(value =>
-                {
-                    _nextSeeds.Clear();
-
-                    if (Seed != -1)
+                    .CreateProperty<int>("Seed")
+                    .When(() => UseSeed)
+                    .OnGet(() => Seed)
+                    .OnSet(value =>
                     {
-                        _prevSeeds.Push(Seed);
-                    }
+                        _nextSeeds.Clear();
 
-                    Seed = value;
-                });
+                        if (Seed != -1)
+                        {
+                            _prevSeeds.Push(Seed);
+                        }
 
-            // Buttons
+                        Seed = value;
+                    });
 
             _ = _export
-                .CreateProperty<Callable>("Refresh Palette")
-                .OnGet(() => Callable.From(_GenerateForEditor))
-                .ToolButton("Refresh Palette", "Color");
+                    .CreateProperty<bool>("Seed Based Generation")
+                    .OnGet(() => UseSeed)
+                    .OnSet(value => UseSeed = value);
+
+            // Buttons
+            _ = _export
+                    .CreateProperty<Callable>("Refresh Palette")
+                    .OnGet(() => Callable.From(_GenerateForEditor))
+                    .ToolButton("Refresh Palette", "Color");
 
             // Components
             const float min = 0f;
@@ -208,47 +239,48 @@ namespace CosinefulPalettes
             const bool orLess = true;
 
             _ = _export
-                .CreateProperty<Vector3>("Components/Brightness")
-                .OnGet(() => _brightness)
-                .OnSet(value => _brightness = value)
-                .Range(min, max, step, orGreater: orGreater, orLess: orLess);
+                    .CreateProperty<Vector3>("Components/Brightness")
+                    .OnGet(() => Brightness)
+                    .OnSet(value => Brightness = value)
+                    .Range(min, max, step, orGreater: orGreater, orLess: orLess);
 
             _ = _export
-                .CreateProperty<Vector3>("Components/Contrast")
-                .OnGet(() => _contrast)
-                .OnSet(value => _contrast = value)
-                .Range(min, max, step, orGreater: orGreater, orLess: orLess);
+                    .CreateProperty<Vector3>("Components/Contrast")
+                    .OnGet(() => Contrast)
+                    .OnSet(value => Contrast = value)
+                    .Range(min, max, step, orGreater: orGreater, orLess: orLess);
 
             _ = _export
-                .CreateProperty<Vector3>("Components/Frequency")
-                .OnGet(() => _frequency)
-                .OnSet(value => _frequency = value)
-                .Range(min, max, step, orGreater: orGreater, orLess: orLess);
+                    .CreateProperty<Vector3>("Components/Frequency")
+                    .OnGet(() => Frequency)
+                    .OnSet(value => Frequency = value)
+                    .Range(min, max, step, orGreater: orGreater, orLess: orLess);
 
             _ = _export
-                .CreateProperty<Vector3>("Components/Range")
-                .OnGet(() => _range)
-                .OnSet(value => _range = value)
-                .Range(min, max, step, orGreater: orGreater, orLess: orLess);
+                    .CreateProperty<Vector3>("Components/Range")
+                    .OnGet(() => Range)
+                    .OnSet(value => Range = value)
+                    .Range(min, max, step, orGreater: orGreater, orLess: orLess);
 
             // Randomize
 
             _ = _export
-                .CreateProperty<Callable>("Components/Randomize")
-                .OnGet(() => Callable.From(_ButtonRandomize))
-                .ToolButton("Randomize", "RandomNumberGenerator");
+                    .CreateProperty<Callable>("Components/Randomize")
+                    .When(() => UseSeed)
+                    .OnGet(() => Callable.From(_ButtonRandomize))
+                    .ToolButton("Randomize", "RandomNumberGenerator");
 
             _ = _export
-                .CreateProperty<Callable>("Components/Previous")
-                .When(() => _prevSeeds.Count > 0)
-                .OnGet(() => Callable.From(_ButtonPreviousSeed))
-                .ToolButton("Previous Seed", "GuiTreeArrowLeft");
+                    .CreateProperty<Callable>("Components/Previous")
+                    .When(() => _prevSeeds.Count > 0 && UseSeed)
+                    .OnGet(() => Callable.From(_ButtonPreviousSeed))
+                    .ToolButton("Previous Seed", "GuiTreeArrowLeft");
 
             _ = _export
-                .CreateProperty<Callable>("Components/Next")
-                .When(() => _nextSeeds.Count > 0)
-                .OnGet(() => Callable.From(_ButtonNextSeed))
-                .ToolButton("Next Seed", "GuiTreeArrowRight");
+                    .CreateProperty<Callable>("Components/Next")
+                    .When(() => _nextSeeds.Count > 0 && UseSeed)
+                    .OnGet(() => Callable.From(_ButtonNextSeed))
+                    .ToolButton("Next Seed", "GuiTreeArrowRight");
 
             _GenerateForEditor();
         }
@@ -321,6 +353,7 @@ namespace CosinefulPalettes
             }
 
             Seed = seed;
+            UseSeed = true;
             _RandomizeInternal();
         }
 
@@ -418,10 +451,12 @@ namespace CosinefulPalettes
 
             var random = new Random(Seed);
 
-            Brightness = getRandomizedVector();
-            Contrast = getRandomizedVector();
-            Frequency = getRandomizedVector();
-            Range = getRandomizedVector();
+            _brightness = getRandomizedVector();
+            _contrast = getRandomizedVector();
+            _frequency = getRandomizedVector();
+            _range = getRandomizedVector();
+
+            NotifyPropertyListChanged();
 
             return;
 
@@ -450,7 +485,10 @@ namespace CosinefulPalettes
                 offsets.Add((float)i / (OutputGradientColorCount - 1));
             }
 
-            _RandomizeInternal();
+            if (UseSeed)
+            {
+                _RandomizeInternal();
+            }
 
             OutputGradient = new Gradient {
                 Colors = _Generate_CosineFormula(),
