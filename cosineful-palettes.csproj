@@ -1,7 +1,8 @@
-<Project Sdk="Godot.NET.Sdk/4.6.0">
+<Project Sdk="Godot.NET.Sdk/4.6.2">
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <RootNamespace>CosinefulPalettes</RootNamespace>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 </Project>
