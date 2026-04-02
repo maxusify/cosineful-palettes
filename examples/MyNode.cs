@@ -1,3 +1,5 @@
+namespace CosinefulPalettes.Examples;
+
 using CosinefulPalettes;
 
 using Godot;
