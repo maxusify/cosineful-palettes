@@ -10,20 +10,12 @@ namespace CosinefulPalettes.Editor
             CustomMinimumSize = new Vector2(0, 75f),
         };
 
-        public CosinefulPalettePreview(CosinefulPalette cosinefulPalette)
+        public CosinefulPalettePreview() : this(new CosinefulPalette())
         {
-            _textureRect.Texture = new GradientTexture2D {
-                Gradient = cosinefulPalette.GetColorsGradient()
-            };
-
-            AddChild(_textureRect);
-            _textureRect.SetAnchorsPreset(LayoutPreset.FullRect);
         }
 
-        public CosinefulPalettePreview()
+        public CosinefulPalettePreview(CosinefulPalette cosinefulPalette)
         {
-            var cosinefulPalette = new CosinefulPalette();
-
             _textureRect.Texture = new GradientTexture2D {
                 Gradient = cosinefulPalette.GetColorsGradient()
             };
