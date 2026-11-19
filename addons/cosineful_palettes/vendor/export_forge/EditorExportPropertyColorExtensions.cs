@@ -1,4 +1,4 @@
-namespace CosinefulPalettes.Utils.ExportForge
+namespace CosinefulPalettes.Vendor.ExportForge
 {
     using Godot;
 
@@ -11,11 +11,9 @@ namespace CosinefulPalettes.Utils.ExportForge
         /// Disables alpha channel of the edited color.
         /// </summary>
         /// <param name="property">Property.</param>
-        /// <returns>Property.</returns>
-        public static IEditorExportProperty<Color> NoAlpha(this IEditorExportProperty<Color> property)
+        public static void NoAlpha(this EditorExportProperty<Color> property)
         {
             property.SetPropertyHint(PropertyHint.ColorNoAlpha);
-            return property;
         }
     }
 }

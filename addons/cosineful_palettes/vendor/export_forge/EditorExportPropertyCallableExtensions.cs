@@ -1,4 +1,4 @@
-namespace CosinefulPalettes.Utils.ExportForge
+namespace CosinefulPalettes.Vendor.ExportForge
 {
     using Godot;
 
@@ -8,14 +8,13 @@ namespace CosinefulPalettes.Utils.ExportForge
     public static class EditorExportPropertyCallableExtensions
     {
         /// <summary>
-        /// Treats the callable as a tool button.
+        /// Treats the callable as a tool button. The property is shown in the editor only and not stored.
         /// </summary>
         /// <param name="property">Property.</param>
         /// <param name="label">Button label.</param>
         /// <param name="icon">Button icon from the theme icons. Example: "Variant", "RandomNumberGenerator".</param>
-        /// <returns>Property.</returns>
-        public static IEditorExportProperty<Callable> ToolButton(
-            this IEditorExportProperty<Callable> property,
+        public static void ToolButton(
+            this EditorExportProperty<Callable> property,
             string label,
             string? icon = null
         )
@@ -25,7 +24,8 @@ namespace CosinefulPalettes.Utils.ExportForge
                 string.IsNullOrEmpty(icon) ? label : $"{label},{icon}"
             );
 
-            return property;
+            // Callables cannot be saved, so the button must only be shown in the editor.
+            property.RemoveUsageFlags(PropertyUsageFlags.Storage);
         }
     }
 }

@@ -9,6 +9,10 @@
 
 Addon for Godot Engine 4.4+ (Mono/.NET enabled) that allows you to create beautiful palettes with a simple and intuitive custom resource. Color generation is based on the cosine formula greatly inspired by [Inigo Quilez article](https://iquilezles.org/articles/palettes/).
 
+<p align="center">
+    <img src="assets/images/gradient_stack.webp" alt="Stacked palette gradients" height="200">
+</p>
+
 ## Installation
 
 Recommended way to install Cosineful Palettes is through [GodotEnv](https://github.com/chickensoft-games/GodotEnv). In your `addons.jsonc` file add:
@@ -37,7 +41,7 @@ Make sure you have **BUILT** the project and **ENABLED** addon in your Godot pro
 
 <p align="center">
     <img 
-        src="assets/images//installation-enable-addon.jpg"
+        src="assets/images/enable_plugin.webp"
         alt="Enable addon in Godot project settings"
     />
 </p>
@@ -48,7 +52,7 @@ You can create `CosinefulPalette` resource through editor inspector:
 
 <p align="center">
     <img 
-        src="assets/images/showcase-editor-inspector-01.jpg"
+        src="assets/images/inspector_showcase.webp"
         alt="Create CosinefulPalette resource through editor inspector"
     />
 </p>
