@@ -228,25 +228,25 @@ namespace CosinefulPalettes
             _forge
                     .CreateProperty<Vector3>("Components/Brightness")
                     .OnGet(() => Brightness)
-                    .OnSet(value => Brightness = value)
+                    .OnSet(value => SetComponentFromEditor(() => Brightness = value), notifyWhenUpdated: false)
                     .Range(min, max, step, orGreater: orGreater, orLess: orLess);
 
             _forge
                     .CreateProperty<Vector3>("Components/Contrast")
                     .OnGet(() => Contrast)
-                    .OnSet(value => Contrast = value)
+                    .OnSet(value => SetComponentFromEditor(() => Contrast = value), notifyWhenUpdated: false)
                     .Range(min, max, step, orGreater: orGreater, orLess: orLess);
 
             _forge
                     .CreateProperty<Vector3>("Components/Frequency")
                     .OnGet(() => Frequency)
-                    .OnSet(value => Frequency = value)
+                    .OnSet(value => SetComponentFromEditor(() => Frequency = value), notifyWhenUpdated: false)
                     .Range(min, max, step, orGreater: orGreater, orLess: orLess);
 
             _forge
                     .CreateProperty<Vector3>("Components/Range")
                     .OnGet(() => Range)
-                    .OnSet(value => Range = value)
+                    .OnSet(value => SetComponentFromEditor(() => Range = value), notifyWhenUpdated: false)
                     .Range(min, max, step, orGreater: orGreater, orLess: orLess);
 
             // Randomize
@@ -371,7 +371,35 @@ namespace CosinefulPalettes
         }
 
         #endregion Public Methods
+        #region Internal Methods
+
+        /// <summary>
+        /// Gradient produced by the last generation, without triggering a new one.
+        /// </summary>
+        internal Gradient CurrentGradient => OutputGradient;
+
+        /// <summary>
+        /// Evaluates the cosine formula at given offset. Channels are not clamped.
+        /// </summary>
+        /// <param name="t">Offset, usually in range [0, 1].</param>
+        /// <returns>Raw RGB values.</returns>
+        internal Vector3 Evaluate(float t)
+        {
+            return new Vector3(
+                _brightness.X + (_contrast.X * Cos(Tau * ((_frequency.X * t) + _range.X))),
+                _brightness.Y + (_contrast.Y * Cos(Tau * ((_frequency.Y * t) + _range.Y))),
+                _brightness.Z + (_contrast.Z * Cos(Tau * ((_frequency.Z * t) + _range.Z)))
+            );
+        }
+
+        #endregion Internal Methods
         #region Private Methods
+
+        private void SetComponentFromEditor(Action setComponent)
+        {
+            setComponent();
+            _GenerateForEditor();
+        }
 
         private void _ButtonPreviousSeed()
         {
@@ -488,10 +516,6 @@ namespace CosinefulPalettes
         private Color[] _Generate_CosineFormula()
         {
             var colorCount = OutputGradientColorCount;
-            var brightness = Brightness;
-            var contrast = Contrast;
-            var freq = Frequency;
-            var range = Range;
 
             if (colorCount <= 0)
             {
@@ -514,14 +538,12 @@ namespace CosinefulPalettes
 
             Color genColor(int index, int maxIndex)
             {
-                float idx = Max(index, 1);
+                float idx = index;
                 float nc = Max(maxIndex, 1);
 
-                return new Color(
-                    brightness.X + (contrast.X * Cos(Tau * ((freq.X * (idx / nc)) + range.X))),
-                    brightness.Y + (contrast.Y * Cos(Tau * ((freq.Y * (idx / nc)) + range.Y))),
-                    brightness.Z + (contrast.Z * Cos(Tau * ((freq.Z * (idx / nc)) + range.Z)))
-                );
+                var rgb = Evaluate(idx / nc);
+
+                return new Color(rgb.X, rgb.Y, rgb.Z);
             }
         }
 
